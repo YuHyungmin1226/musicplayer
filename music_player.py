@@ -272,17 +272,17 @@ class MusicPlayerUI(tk.Tk):
         self.time_end.pack(side="right")
 
         # Buttons
-        btn_opts = {"bg": self.colors["card"], "fg": self.colors["text_primary"], "borderwidth": 0, "activebackground": self.colors["hover"], "font": ("Helvetica", 20)}
+        btn_opts = {"bg": self.colors["card"], "fg": self.colors["text_primary"], "borderwidth": 0, "activebackground": self.colors["hover"]}
         
         self.shuffle_btn = tk.Button(self.controls_frame, text="⇄", command=self.toggle_shuffle, **btn_opts, font=("Helvetica", 14))
         self.shuffle_btn.pack(side="left", padx=15)
         
-        tk.Button(self.controls_frame, text="⏮", command=self.prev_song, **btn_opts).pack(side="left", padx=10)
+        tk.Button(self.controls_frame, text="⏮", command=self.prev_song, **btn_opts, font=("Helvetica", 20)).pack(side="left", padx=10)
         
         self.play_btn = tk.Button(self.controls_frame, text="▶", command=self.toggle_play, **btn_opts, font=("Helvetica", 24))
         self.play_btn.pack(side="left", padx=15)
         
-        tk.Button(self.controls_frame, text="⏭", command=self.next_song, **btn_opts).pack(side="left", padx=10)
+        tk.Button(self.controls_frame, text="⏭", command=self.next_song, **btn_opts, font=("Helvetica", 20)).pack(side="left", padx=10)
         
         self.repeat_btn = tk.Button(self.controls_frame, text="↻", command=self.toggle_repeat, **btn_opts, font=("Helvetica", 14))
         self.repeat_btn.pack(side="left", padx=15)
