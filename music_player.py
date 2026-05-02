@@ -4,7 +4,6 @@ import os
 import random
 import time
 import sys
-from PIL import Image, ImageTk
 
 # --- Library Check ---
 try:
@@ -17,13 +16,6 @@ except ImportError as e:
     messagebox.showerror("Dependency Error", f"{missing_module} module not found.\n\nRun: pip install -r requirements.txt")
     root.destroy()
     exit(1)
-
-def resource_path(relative_path):
-    try:
-        base_path = sys._MEIPASS
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
 
 class MusicEngine:
     def __init__(self):
@@ -133,133 +125,68 @@ class MusicPlayerUI(tk.Tk):
     def __init__(self, engine):
         super().__init__()
         self.engine = engine
-        self.title("Antigravity Player")
-        self.geometry("1000x750")
-        
-        # Colors - Spotify Inspired
-        self.colors = {
-            "bg": "#121212",
-            "sidebar": "#000000",
-            "player": "#181818",
-            "accent": "#1DB954",
-            "text": "#FFFFFF",
-            "subtext": "#B3B3B3",
-            "hover": "#282828"
-        }
-        
-        self.configure(bg=self.colors["bg"])
-        self.setup_styles()
+        self.title("Music Player")
+        self.geometry("600x500")
         self.create_widgets()
         self.update_loop()
 
-    def setup_styles(self):
-        style = ttk.Style()
-        style.theme_use('clam')
-        style.configure("TFrame", background=self.colors["bg"])
-        style.configure("Sidebar.TFrame", background=self.colors["sidebar"])
-        style.configure("Player.TFrame", background=self.colors["player"])
-        
-        # Custom Progress Bar (Horizontal Scale)
-        style.configure("Spotify.Horizontal.TScale", 
-                        background=self.colors["player"], 
-                        troughcolor="#404040", 
-                        sliderthickness=12,
-                        borderwidth=0)
-
     def create_widgets(self):
-        # 1. Sidebar
-        self.sidebar = tk.Frame(self, bg=self.colors["sidebar"], width=240)
-        self.sidebar.pack(side="left", fill="y")
-        self.sidebar.pack_propagate(False)
+        # Top Frame: Info and Progress
+        self.top_frame = ttk.Frame(self)
+        self.top_frame.pack(fill="x", padx=10, pady=10)
 
-        tk.Label(self.sidebar, text="Your Library", fg=self.colors["text"], bg=self.colors["sidebar"], font=("Helvetica", 14, "bold")).pack(pady=30, padx=20, anchor="w")
-
-        self.playlist_box = tk.Listbox(self.sidebar, bg=self.colors["sidebar"], fg=self.colors["subtext"],
-                                     selectbackground=self.colors["hover"], selectforeground=self.colors["text"],
-                                     font=("Helvetica", 11), borderwidth=0, highlightthickness=0,
-                                     activestyle="none")
-        self.playlist_box.pack(fill="both", expand=True, padx=5)
-        self.playlist_box.bind("<Double-1>", self.play_selected)
-
-        # 2. Player Bar (Bottom)
-        self.player_bar = tk.Frame(self, bg=self.colors["player"], height=100)
-        self.player_bar.pack(side="bottom", fill="x")
-        self.player_bar.pack_propagate(False)
-
-        # Progress Section (at the top of player bar)
-        self.progress_frame = tk.Frame(self.player_bar, bg=self.colors["player"])
-        self.progress_frame.pack(fill="x", pady=(5, 0))
-
-        self.time_start = tk.Label(self.progress_frame, text="0:00", bg=self.colors["player"], fg=self.colors["subtext"], font=("Helvetica", 9), width=5)
-        self.time_start.pack(side="left", padx=10)
+        self.song_label = ttk.Label(self.top_frame, text="No song selected", font=("Helvetica", 12, "bold"))
+        self.song_label.pack(pady=5)
 
         self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Scale(self.progress_frame, orient="horizontal", variable=self.progress_var, from_=0, to=100, style="Spotify.Horizontal.TScale", command=self.on_seek_drag)
-        self.progress_bar.pack(side="left", fill="x", expand=True)
+        self.progress_bar = ttk.Scale(self.top_frame, orient="horizontal", variable=self.progress_var, from_=0, to=100, command=self.on_seek_drag)
+        self.progress_bar.pack(fill="x", padx=5)
         self.progress_bar.bind("<ButtonRelease-1>", self.on_seek_release)
 
-        self.time_end = tk.Label(self.progress_frame, text="0:00", bg=self.colors["player"], fg=self.colors["subtext"], font=("Helvetica", 9), width=5)
-        self.time_end.pack(side="right", padx=10)
+        self.time_label = ttk.Label(self.top_frame, text="00:00 / 00:00")
+        self.time_label.pack(pady=5)
 
-        # Controls Section
-        self.controls_inner = tk.Frame(self.player_bar, bg=self.colors["player"])
-        self.controls_inner.pack(pady=5)
+        # Middle Frame: Playlist
+        self.middle_frame = ttk.Frame(self)
+        self.middle_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        self.shuffle_btn = self.create_icon_button(self.controls_inner, "⇄", self.toggle_shuffle, size=16)
-        self.create_icon_button(self.controls_inner, "⏮", self.prev_song, size=22).pack(side="left", padx=15)
-        self.play_btn = self.create_icon_button(self.controls_inner, "▶", self.toggle_play, size=30)
-        self.create_icon_button(self.controls_inner, "⏭", self.next_song, size=22).pack(side="left", padx=15)
-        self.repeat_btn = self.create_icon_button(self.controls_inner, "↻", self.toggle_repeat, size=16)
+        self.playlist_box = tk.Listbox(self.middle_frame, selectmode=tk.SINGLE)
+        self.playlist_box.pack(side="left", fill="both", expand=True)
+        self.playlist_box.bind("<Double-1>", self.play_selected)
 
-        # Volume Section (Right)
-        self.vol_frame = tk.Frame(self.player_bar, bg=self.colors["player"])
-        self.vol_frame.place(relx=0.9, rely=0.6, anchor="center")
-        
-        tk.Label(self.vol_frame, text="🔊", bg=self.colors["player"], fg=self.colors["subtext"]).pack(side="left", padx=5)
-        self.volume_slider = ttk.Scale(self.vol_frame, from_=0, to=1, orient="horizontal", style="Spotify.Horizontal.TScale", command=self.engine.set_volume, length=80)
+        self.scrollbar = ttk.Scrollbar(self.middle_frame, orient="vertical", command=self.playlist_box.yview)
+        self.scrollbar.pack(side="right", fill="y")
+        self.playlist_box.config(yscrollcommand=self.scrollbar.set)
+
+        # Bottom Frame: Controls
+        self.bottom_frame = ttk.Frame(self)
+        self.bottom_frame.pack(fill="x", padx=10, pady=10)
+
+        self.controls_inner = ttk.Frame(self.bottom_frame)
+        self.controls_inner.pack()
+
+        ttk.Button(self.controls_inner, text="⏮", width=5, command=self.prev_song).pack(side="left", padx=2)
+        self.play_btn = ttk.Button(self.controls_inner, text="▶", width=5, command=self.toggle_play)
+        self.play_btn.pack(side="left", padx=2)
+        ttk.Button(self.controls_inner, text="⏹", width=5, command=self.stop_song).pack(side="left", padx=2)
+        ttk.Button(self.controls_inner, text="⏭", width=5, command=self.next_song).pack(side="left", padx=2)
+
+        # Settings Frame
+        self.settings_frame = ttk.Frame(self.bottom_frame)
+        self.settings_frame.pack(pady=10)
+
+        ttk.Label(self.settings_frame, text="Volume:").pack(side="left", padx=5)
+        self.volume_slider = ttk.Scale(self.settings_frame, from_=0, to=1, orient="horizontal", command=self.engine.set_volume, length=100)
         self.volume_slider.set(0.5)
-        self.volume_slider.pack(side="left")
+        self.volume_slider.pack(side="left", padx=5)
 
-        # 3. Main Content
-        self.content = tk.Frame(self, bg=self.colors["bg"])
-        self.content.pack(side="right", fill="both", expand=True)
+        self.shuffle_btn = ttk.Button(self.settings_frame, text="Shuffle: OFF", command=self.toggle_shuffle)
+        self.shuffle_btn.pack(side="left", padx=5)
 
-        # Art Card
-        self.art_card = tk.Frame(self.content, bg=self.colors["bg"])
-        self.art_card.pack(expand=True)
+        self.repeat_btn = ttk.Button(self.settings_frame, text="Repeat: NONE", command=self.toggle_repeat)
+        self.repeat_btn.pack(side="left", padx=5)
 
-        try:
-            art_path = resource_path("assets/default_art.png")
-            img = Image.open(art_path)
-            img = img.resize((400, 400), Image.Resampling.LANCZOS)
-            self.album_art = ImageTk.PhotoImage(img)
-            self.art_label = tk.Label(self.art_card, image=self.album_art, bg=self.colors["bg"], borderwidth=0, highlightthickness=0)
-            self.art_label.pack(pady=20)
-        except Exception:
-            tk.Label(self.art_card, text="Music", font=("Helvetica", 40, "bold"), bg=self.colors["bg"], fg=self.colors["hover"]).pack(pady=100)
-
-        self.song_label = tk.Label(self.art_card, text="No track selected", font=("Helvetica", 20, "bold"), bg=self.colors["bg"], fg=self.colors["text"])
-        self.song_label.pack()
-        
-        self.artist_label = tk.Label(self.art_card, text="Select a song to start", font=("Helvetica", 12), bg=self.colors["bg"], fg=self.colors["subtext"])
-        self.artist_label.pack(pady=5)
-
-        self.create_menu()
-
-    def create_icon_button(self, parent, text, command, size=20):
-        btn = tk.Label(parent, text=text, bg=self.colors["player"], fg=self.colors["text"], font=("Helvetica", size), cursor="hand2", width=2)
-        btn.pack(side="left", padx=10)
-        btn.bind("<Button-1>", lambda e: command())
-        btn.bind("<Enter>", lambda e: btn.config(fg=self.colors["accent"]))
-        btn.bind("<Leave>", lambda e: btn.config(fg=self.colors["text"] if not self.is_active_btn(btn) else self.colors["accent"]))
-        return btn
-
-    def is_active_btn(self, btn):
-        if btn == self.shuffle_btn: return self.engine.shuffle_mode
-        if btn == self.repeat_btn: return self.engine.repeat_mode != "NONE"
-        return False
-
-    def create_menu(self):
+        # Menu
         menubar = tk.Menu(self)
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Add Files", command=self.add_files)
@@ -284,7 +211,7 @@ class MusicPlayerUI(tk.Tk):
     def update_listbox(self):
         self.playlist_box.delete(0, tk.END)
         for path in self.engine.playlist:
-            self.playlist_box.insert(tk.END, f"  {os.path.basename(path)}")
+            self.playlist_box.insert(tk.END, os.path.basename(path))
 
     def play_selected(self, event=None):
         selection = self.playlist_box.curselection()
@@ -297,6 +224,10 @@ class MusicPlayerUI(tk.Tk):
             if self.engine.playlist: self.engine.play(self.engine.current_index if self.engine.current_index != -1 else 0)
         elif self.engine.current_index == -1 and self.engine.playlist: self.engine.play(0)
         else: self.engine.pause_resume()
+        self.update_ui_state()
+
+    def stop_song(self):
+        self.engine.stop()
         self.update_ui_state()
 
     def next_song(self):
@@ -315,14 +246,14 @@ class MusicPlayerUI(tk.Tk):
 
     def toggle_shuffle(self):
         is_on = self.engine.toggle_shuffle()
-        self.shuffle_btn.config(fg=self.colors["accent"] if is_on else self.colors["text"])
+        self.shuffle_btn.config(text=f"Shuffle: {'ON' if is_on else 'OFF'}")
 
     def toggle_repeat(self):
         modes = ["NONE", "ONE", "ALL"]
         current = modes.index(self.engine.repeat_mode)
         next_mode = modes[(current + 1) % len(modes)]
         self.engine.repeat_mode = next_mode
-        self.repeat_btn.config(fg=self.colors["accent"] if next_mode != "NONE" else self.colors["text"])
+        self.repeat_btn.config(text=f"Repeat: {next_mode}")
 
     def on_seek_drag(self, val): self.is_dragging = True
     def on_seek_release(self, event):
@@ -334,7 +265,7 @@ class MusicPlayerUI(tk.Tk):
 
     def format_time(self, seconds):
         mins, secs = divmod(int(seconds), 60)
-        return f"{mins}:{secs:02d}"
+        return f"{mins:02d}:{secs:02d}"
 
     def update_ui_state(self):
         if self.engine.current_index != -1:
@@ -352,8 +283,7 @@ class MusicPlayerUI(tk.Tk):
             if not getattr(self, 'is_dragging', False):
                 if total_len > 0: self.progress_var.set((current_pos / total_len) * 100)
                 else: self.progress_var.set(0)
-            self.time_start.config(text=self.format_time(current_pos))
-            self.time_end.config(text=self.format_time(total_len))
+            self.time_label.config(text=f"{self.format_time(current_pos)} / {self.format_time(total_len)}")
             if not pygame.mixer.music.get_busy() and not self.engine.is_paused and not self.engine.is_stopped:
                 if self.engine.repeat_mode == "ONE": self.engine.play(self.engine.current_index)
                 elif self.engine.repeat_mode == "ALL" or self.engine.current_index < len(self.engine.playlist) - 1:
