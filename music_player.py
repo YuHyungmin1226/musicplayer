@@ -121,16 +121,6 @@ class MusicEngine:
 
     def toggle_shuffle(self):
         self.shuffle_mode = not self.shuffle_mode
-        if self.shuffle_mode:
-            current_song = self.playlist[self.current_index] if self.current_index != -1 else None
-            random.shuffle(self.playlist)
-            if current_song:
-                self.current_index = self.playlist.index(current_song)
-        else:
-            current_song = self.playlist[self.current_index] if self.current_index != -1 else None
-            self.playlist = list(self.original_playlist)
-            if current_song:
-                self.current_index = self.playlist.index(current_song)
         return self.shuffle_mode
 
     def get_current_pos(self):
@@ -306,7 +296,6 @@ class MusicPlayerUI(tk.Tk):
     def toggle_shuffle(self):
         is_on = self.engine.toggle_shuffle()
         self.shuffle_btn.config(text=f"Shuffle: {'ON' if is_on else 'OFF'}")
-        self.update_listbox()
 
     def toggle_repeat(self):
         modes = ["NONE", "ONE", "ALL"]
