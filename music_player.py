@@ -321,7 +321,7 @@ class MusicPlayerUI(tk.Tk):
             self.playlist_box.selection_clear(0, tk.END)
             self.playlist_box.selection_set(self.engine.current_index)
             self.playlist_box.see(self.engine.current_index)
-            self.play_btn.config(text="⏸" if not self.engine.is_paused else "▶")
+            self.play_btn.config(text="⏸" if not self.engine.is_paused and not self.engine.is_stopped else "▶")
 
     def format_time(self, seconds):
         mins, secs = divmod(int(seconds), 60)
