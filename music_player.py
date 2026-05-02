@@ -3,6 +3,7 @@ from tkinter import ttk, filedialog, messagebox
 import os
 import random
 import time
+from mutagen import File as MutagenFile
 
 # --- Library Check ---
 try:
@@ -21,6 +22,9 @@ except ImportError:
 class MusicEngine:
     """Handles playback logic and state."""
     def __init__(self):
+        # Pre-initialize mixer with better buffer for high-quality audio
+        if not pygame.mixer.get_init():
+            pygame.mixer.pre_init(44100, -16, 2, 4096)
         pygame.mixer.init()
         self.playlist = []
         self.original_playlist = []
@@ -30,6 +34,7 @@ class MusicEngine:
         self.repeat_mode = "NONE" # NONE, ONE, ALL
         self.volume = 0.5
         self.start_time = 0 # Used for seeking calculation
+        self.duration_cache = {} # Cache for song lengths
         
     def add_songs(self, file_paths):
         for path in file_paths:
@@ -132,12 +137,28 @@ class MusicEngine:
 
     def get_song_length(self):
         if self.current_index == -1: return 0
+        path = self.playlist[self.current_index]
+        
+        # Check cache first
+        if path in self.duration_cache:
+            return self.duration_cache[path]
+            
         try:
-            # Sound object is still the most direct way to get length in pygame without mutagen
-            # We load it only when needed for UI updates
-            s = pygame.mixer.Sound(self.playlist[self.current_index])
-            return s.get_length()
-        except:
+            # Use mutagen to get duration without loading the whole file
+            audio = MutagenFile(path)
+            if audio is not None and audio.info:
+                length = audio.info.length
+                self.duration_cache[path] = length
+                return length
+            
+            # Fallback to pygame.mixer.Sound (slow, but works for odd files)
+            # We cache it so we only do this once
+            s = pygame.mixer.Sound(path)
+            length = s.get_length()
+            self.duration_cache[path] = length
+            return length
+        except Exception as e:
+            print(f"Error getting duration: {e}")
             return 0
 
 class MusicPlayerUI(tk.Tk):
