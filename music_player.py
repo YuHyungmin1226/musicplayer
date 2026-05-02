@@ -103,7 +103,6 @@ class MusicEngine:
             self.current_index = random.randint(0, len(self.playlist) - 1)
         else:
             self.current_index = (self.current_index + 1) % len(self.playlist)
-        self.play()
         return self.current_index
 
     def prev_song(self):
@@ -112,7 +111,6 @@ class MusicEngine:
             self.current_index = random.randint(0, len(self.playlist) - 1)
         else:
             self.current_index = (self.current_index - 1) % len(self.playlist)
-        self.play()
         return self.current_index
 
     def set_volume(self, val):
@@ -273,7 +271,10 @@ class MusicPlayerUI(tk.Tk):
             self.update_ui_state()
 
     def toggle_play(self):
-        if self.engine.current_index == -1 and self.engine.playlist:
+        if self.engine.is_stopped:
+            if self.engine.playlist:
+                self.engine.play(self.engine.current_index if self.engine.current_index != -1 else 0)
+        elif self.engine.current_index == -1 and self.engine.playlist:
             self.engine.play(0)
         else:
             paused = self.engine.pause_resume()
@@ -286,11 +287,19 @@ class MusicPlayerUI(tk.Tk):
         self.update_ui_state()
 
     def next_song(self):
+        if not self.engine.playlist: return
+        should_play = not self.engine.is_paused and not self.engine.is_stopped
         self.engine.next_song()
+        if should_play:
+            self.engine.play()
         self.update_ui_state()
 
     def prev_song(self):
+        if not self.engine.playlist: return
+        should_play = not self.engine.is_paused and not self.engine.is_stopped
         self.engine.prev_song()
+        if should_play:
+            self.engine.play()
         self.update_ui_state()
 
     def toggle_shuffle(self):
