@@ -31,6 +31,7 @@ class MusicEngine:
         self.original_playlist = []
         self.current_index = -1
         self.is_paused = False
+        self.is_stopped = True
         self.shuffle_mode = False
         self.repeat_mode = "NONE" # NONE, ONE, ALL
         self.volume = 0.5
@@ -72,6 +73,7 @@ class MusicEngine:
             pygame.mixer.music.play(start=start_pos)
             self.start_time = start_pos
             self.is_paused = False
+            self.is_stopped = False
             return True
         except Exception as e:
             print(f"Playback error: {e}")
@@ -80,6 +82,7 @@ class MusicEngine:
     def stop(self):
         pygame.mixer.music.stop()
         self.is_paused = False
+        self.is_stopped = True
         self.start_time = 0
 
     def pause_resume(self):
@@ -349,7 +352,7 @@ class MusicPlayerUI(tk.Tk):
             self.time_label.config(text=f"{self.format_time(current_pos)} / {self.format_time(total_len)}")
 
             # Auto next song
-            if not pygame.mixer.music.get_busy() and not self.engine.is_paused:
+            if not pygame.mixer.music.get_busy() and not self.engine.is_paused and not self.engine.is_stopped:
                 if self.engine.repeat_mode == "ONE":
                     self.engine.play(self.engine.current_index)
                 elif self.engine.repeat_mode == "ALL" or self.engine.current_index < len(self.engine.playlist) - 1:
