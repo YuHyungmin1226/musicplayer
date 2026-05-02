@@ -3,19 +3,20 @@ from tkinter import ttk, filedialog, messagebox
 import os
 import random
 import time
-from mutagen import File as MutagenFile
 
 # --- Library Check ---
 try:
     import pygame
-except ImportError:
-    # GUI error message if pygame is missing (to help users on wrong python versions)
+    from mutagen import File as MutagenFile
+except ImportError as e:
+    # GUI error message if dependencies are missing
     root = tk.Tk()
     root.withdraw()
+    missing_module = str(e).split("'")[-2] if "'" in str(e) else "Required modules"
     messagebox.showerror("Dependency Error", 
-        "Pygame module not found.\n\n"
-        "Please ensure you are using the correct Python interpreter (e.g., .venv).\n"
-        "Run: pip install pygame")
+        f"{missing_module} module not found.\n\n"
+        "Please ensure all dependencies are installed.\n"
+        "Run: pip install -r requirements.txt")
     root.destroy()
     exit(1)
 
